@@ -1,2 +1,4 @@
 venv/
+venv_acer/
 __pycache__/
+.env

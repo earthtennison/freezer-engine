@@ -1,12 +1,14 @@
-#!/usr/bin/python
+#!/usr/bin/python3.10
 #-*-coding: utf-8 -*-
 ##from __future__ import absolute_import
 ###
 # ref: https://medium.com/linedevth/%E0%B8%AA%E0%B8%A3%E0%B9%89%E0%B8%B2%E0%B8%87-line-chatbot-%E0%B8%94%E0%B9%89%E0%B8%A7%E0%B8%A2%E0%B8%A0%E0%B8%B2%E0%B8%A9%E0%B8%B2-python-84750b353fba
 ################################
+from urllib.parse import uses_relative
 from flask import Flask, jsonify, render_template, request
 import json
 import numpy as np
+import pandas as pd
 
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,TemplateSendMessage,ImageSendMessage, StickerSendMessage, AudioSendMessage
@@ -16,12 +18,31 @@ from linebot import (
     LineBotApi, WebhookHandler
 )
 
+import os
+from dotenv import load_dotenv
+
+from conversation import Conversation
+
+# time library
+import time
+from datetime import datetime, timedelta
+import schedule
+
+# multiprocess for parallel processing
+from multiprocessing import Process, Value
+
+
 app = Flask(__name__)
 
-lineaccesstoken = 'e4C8JWBbGkMEn/frIpVcLY8tF+M5OcKEgoEwEZyIgNx0JAGULRE1+UHEISAiE92HVcU/yGeSU5AQaKlRPKUZ2POpizaLvLDEAdXsDyvM8geveayl/0cGbuWdvo9lxNjG+CXqv8tq6+gkEBnWvGcGwAdB04t89/1O/w1cDnyilFU='
+load_dotenv()
+
+lineaccesstoken = os.getenv('LINE_ACCESS_TOKEN')
 line_bot_api = LineBotApi(lineaccesstoken)
 
-####################### new ########################
+# conversation module
+con = Conversation("./database/data1.csv")
+
+
 @app.route('/')
 def index():
     return "Hello World!"
@@ -40,7 +61,7 @@ def callback():
 
 
 def event_handle(event):
-    print(event)
+    # print(event)
     try:
         userId = event['source']['userId']
     except:
@@ -64,7 +85,12 @@ def event_handle(event):
 
     if msgType == "text":
         msg = str(event["message"]["text"])
-        replyObj = TextSendMessage(text=msg)
+
+        con.push_msg(msg)
+        res_msg = con.response()
+        replyObj = TextSendMessage(text=res_msg)
+        print("Bot:",res_msg)
+
         line_bot_api.reply_message(rtoken, replyObj)
 
     else:
@@ -73,5 +99,36 @@ def event_handle(event):
         line_bot_api.reply_message(rtoken, replyObj)
     return ''
 
+def expire_reminder():
+    msg = 'Expiring item! :\n'
+    item_cnt = 0
+    for idx, row in con.db.df.iterrows():
+        date_diff =  datetime.strptime(row['expiry_date'], '%d.%m.%Y') - datetime.now()
+        if  date_diff < timedelta(days = 2):
+            msg += '- ' + row['name'] + ' is expired in ' + str(date_diff.days) + 'days\n'
+            item_cnt += 1
+
+    if item_cnt > 0:
+        replyObj = TextSendMessage(text=msg)
+        print("Bot:",msg)
+        # broadcast to all user
+        line_bot_api.broadcast(replyObj)
+
+
+def expire_reminder_loop():
+
+    # check every 10 am
+    schedule.every().day.at("10:00").do(expire_reminder)
+    # for debug
+    schedule.every(10).minutes.do(expire_reminder)
+    while True:
+        schedule.run_pending()
+        # print("running")
+        time.sleep(1)
+
 if __name__ == '__main__':
-    app.run(debug=True, port = 80)
+    
+    p = Process(target=expire_reminder_loop)
+    p.start()  
+    app.run(debug=True, port = 80, use_reloader=False)
+    p.join()
