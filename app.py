@@ -61,7 +61,7 @@ def callback():
 
 
 def event_handle(event):
-    # print(event)
+    print(event)
     try:
         userId = event['source']['userId']
     except:

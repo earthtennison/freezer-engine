@@ -42,7 +42,7 @@ class Conversation():
             self.conver_type = 'default'
 
         # check if is initial message of the conversation
-        if self.conver_index == 0:
+        if self.conver_index == 0 and self.conver_type == '':
             self.get_conver_type(self.current_msg)
         
         print("conver_index:",self.conver_index)
