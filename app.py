@@ -104,9 +104,9 @@ def expire_reminder():
     msg = 'Expiring item! :\n'
     item_cnt = 0
     for idx, row in con.db.df.iterrows():
-        date_diff =  datetime.strptime(row['expiry_date'], '%d.%m.%Y') - datetime.now()
-        if  date_diff < timedelta(days = 2):
-            msg += '- ' + row['name'] + ' is expired in ' + str(date_diff.days) + 'days\n'
+        date_diff =  datetime.strptime(row['expiry_date'], '%d.%m.%Y') - datetime.now().replace(hour=0, minute=0, second=0)
+        if  date_diff.days + 1 < 2: # 2 days
+            msg += '- ' + row['name'] + ' is expired in ' + str(date_diff.days + 1) + ' days\n'
             item_cnt += 1
 
     if item_cnt > 0:

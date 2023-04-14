@@ -68,6 +68,7 @@ class Conversation():
                         date_obj = datetime.strptime(date_str, '%d.%m.%Y')
                     else:
                         date_obj = datetime.strptime(date_str, '%d.%m')
+                        date_str += '.2023'
                 except ValueError:
                     print("Incorrect date format dd.mm.yyyy or dd.mm")
                     return "Tell me the date again in format dd.mm.yyyy or dd.mm"

@@ -21,6 +21,8 @@ class csv_database:
 
     def save_csv(self):
         self.df.to_csv(self.file_path, index=False)
+        print("Saved to {}".format(self.file_path))
+        print(self.df)
 
     def load_csv(self):
         self.df = pd.read_csv(self.file_path)
