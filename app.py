@@ -100,6 +100,7 @@ def event_handle(event):
     return ''
 
 def expire_reminder():
+    print("Bot: I am checking expiring items.")
     msg = 'Expiring item! :\n'
     item_cnt = 0
     for idx, row in con.db.df.iterrows():
@@ -109,6 +110,13 @@ def expire_reminder():
             item_cnt += 1
 
     if item_cnt > 0:
+        replyObj = TextSendMessage(text=msg)
+        print("Bot:",msg)
+        # broadcast to all user
+        line_bot_api.broadcast(replyObj)
+    else:
+        msg = 'No item expiring today.'
+        print("Bot:", msg)
         replyObj = TextSendMessage(text=msg)
         print("Bot:",msg)
         # broadcast to all user
