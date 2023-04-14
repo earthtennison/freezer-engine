@@ -36,9 +36,17 @@ class Conversation():
         self.current_msg = current_msg
         # print("Bot:",self.current_msg)
 
+        # check cancel message
+        if self.current_msg.lower() in ['cancel', 'stop']:
+            self.conver_index = 0
+            self.conver_type = 'default'
+
         # check if is initial message of the conversation
         if self.conver_index == 0:
             self.get_conver_type(self.current_msg)
+        
+        print("conver_index:",self.conver_index)
+        print("conver_type:",self.conver_type)
 
 
 
@@ -58,7 +66,7 @@ class Conversation():
                 self.conver_index += 1
                 return "What's the name of item?"
             elif self.conver_index == 1:
-                self.item['name'] = self.current_msg
+                self.item['name'] = self.current_msg.lower()
                 self.conver_index += 1
                 return "What's the date of expiration?"
             elif self.conver_index == 2:
@@ -96,7 +104,15 @@ class Conversation():
                 self.conver_index += 1
                 return "What's the name of item you want to update?"
             elif self.conver_index == 1:
-                self.item['name'] = self.current_msg
+                self.item['name'] = self.current_msg.lower()
+                # check if item is in database
+                if self.item['name'] not in self.db.df['name'].to_list():
+                    print("Bot: Item is not in the list")
+
+                    self.conver_index = 0
+                    self.conver_type = ''
+
+                    return 'Item is not in the list'
                 self.conver_index += 1
                 return "What's the new quantity?"
             elif self.conver_index == 2:
@@ -105,11 +121,19 @@ class Conversation():
                     # delete item
                     self.db.df = self.db.df.loc[self.db.df['name'] != self.item['name']]
                     self.db.save_csv()
-                    return "I delete {}".format(self.item['name'])
+
+                    self.conver_index = 0
+                    self.conver_type = ''
+
+                    return "I deleted {}".format(self.item['name'])
                 else:
                     # update item
                     self.db.df.loc[self.db.df['name'] == self.item['name'],'quantity'] = self.item['quantity']
                     self.db.save_csv()
+
+                    self.conver_index = 0
+                    self.conver_type = ''
+
                     return "{} updated".format(self.item['name'])
 
 

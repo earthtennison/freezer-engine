@@ -101,12 +101,12 @@ def event_handle(event):
 
 def expire_reminder():
     print("Bot: I am checking expiring items.")
-    msg = 'Expiring item! :\n'
+    msg = 'Expiring item! :'
     item_cnt = 0
     for idx, row in con.db.df.iterrows():
         date_diff =  datetime.strptime(row['expiry_date'], '%d.%m.%Y') - datetime.now().replace(hour=0, minute=0, second=0)
         if  date_diff.days + 1 < 2: # 2 days
-            msg += '- ' + row['name'] + ' is expired in ' + str(date_diff.days + 1) + ' days\n'
+            msg += '\n- ' + row['name'] + ' is expired in ' + str(date_diff.days + 1) + ' days'
             item_cnt += 1
 
     if item_cnt > 0:
@@ -128,7 +128,7 @@ def expire_reminder_loop():
     # check every 10 am
     schedule.every().day.at("10:00").do(expire_reminder)
     # for debug
-    schedule.every(1).minutes.do(expire_reminder)
+    schedule.every(5).minutes.do(expire_reminder)
     while True:
         schedule.run_pending()
         # print("running")
