@@ -139,6 +139,11 @@ def expire_reminder_loop():
     while True:
         schedule.run_pending()
         # print("running")
+ 
+        print("logging:")
+        print("conver_index",con.conver_index)
+        print("conver_type",con.conver_type)
+
         time.sleep(1)
 
 if __name__ == '__main__':
