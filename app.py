@@ -120,7 +120,7 @@ def expire_reminder_loop():
     # check every 10 am
     schedule.every().day.at("10:00").do(expire_reminder)
     # for debug
-    schedule.every(10).minutes.do(expire_reminder)
+    schedule.every(1).minutes.do(expire_reminder)
     while True:
         schedule.run_pending()
         # print("running")

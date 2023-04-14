@@ -46,6 +46,8 @@ class Conversation():
 
         # rule base for response
         if self.conver_type == 'default':
+            self.conver_index = 0
+            self.conver_type = ''
             return "Hello, I am Freezer. Please tell me what to do:\n" + \
                 "1. add item\n" + \
                 "2. update item\n" + \
@@ -58,7 +60,7 @@ class Conversation():
             elif self.conver_index == 1:
                 self.item['name'] = self.current_msg
                 self.conver_index += 1
-                return "What's the data of expiration?"
+                return "What's the date of expiration?"
             elif self.conver_index == 2:
                 date_str = self.current_msg
                 try:
@@ -83,7 +85,7 @@ class Conversation():
                 self.db.push(self.item)
 
                 self.conver_index = 0
-                self.conver_type = ""
+                self.conver_type = ''
 
                 return "Roger that!"
             # todo add picture
