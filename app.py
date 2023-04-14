@@ -62,6 +62,10 @@ def callback():
 
 def event_handle(event):
     print(event)
+
+    print("before event")
+    print("conver_index",con.conver_index)
+    print("conver_type",con.conver_type)
     try:
         userId = event['source']['userId']
     except:
@@ -91,6 +95,9 @@ def event_handle(event):
         replyObj = TextSendMessage(text=res_msg)
         print("Bot:",res_msg)
 
+        print("after event")
+        print("conver_index",con.conver_index)
+        print("conver_type",con.conver_type)
         line_bot_api.reply_message(rtoken, replyObj)
 
     else:

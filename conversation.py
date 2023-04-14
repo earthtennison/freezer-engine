@@ -45,8 +45,9 @@ class Conversation():
         if self.conver_index == 0 and self.conver_type == '':
             self.get_conver_type(self.current_msg)
         
-        print("conver_index:",self.conver_index)
-        print("conver_type:",self.conver_type)
+        # print("check")
+        # print("conver_index:",self.conver_index)
+        # print("conver_type:",self.conver_type)
 
 
 
@@ -84,7 +85,11 @@ class Conversation():
                 self.conver_index += 1
                 return "How many piece of {}?".format(self.item['name'])
             elif self.conver_index == 3:
-                self.item['quantity'] = int(self.current_msg)
+                try:
+                    self.item['quantity'] = int(self.current_msg)
+                except ValueError:
+                    print("Incorrect quantity format")
+                    return "Tell me the quantity again"
                 self.conver_index += 1
                 return "Where will you store the item? fridge home, fridge back home, fridge condo, cabinet" # todo show flex icon
             elif self.conver_index == 4:
