@@ -77,8 +77,11 @@ class Conversation():
 			item_cnt = 0
 			for idx, row in self.db.df.iterrows():
 				date_diff =  datetime.strptime(row['expiry_date'], '%d.%m.%Y') - datetime.now().replace(hour=0, minute=0, second=0)
-				if  date_diff.days + 1 < 2: # 2 days
+				if  0 <= date_diff.days + 1 < 2: # 0-2 days
 					msg += '\n- ' + row['name'] + ' is expired in ' + str(date_diff.days + 1) + ' days'
+					item_cnt += 1
+				elif date_diff.days + 1 < 0: # <0 days
+					msg += '\n- '+ row['name'] +' is expired ' + str(-1*(date_diff.days + 1)) + ' days ago'
 					item_cnt += 1
 
 			self.conver_index = 0
