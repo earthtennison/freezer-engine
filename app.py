@@ -29,7 +29,11 @@ from datetime import datetime, timedelta
 import schedule
 
 # multiprocess for parallel processing
-from multiprocessing import Process, Value
+from multiprocessing import Process
+
+# custom socket for client connections
+from custom_socket import CustomSocket
+import socket
 
 
 app = Flask(__name__)
@@ -38,9 +42,6 @@ load_dotenv()
 
 lineaccesstoken = os.getenv('LINE_ACCESS_TOKEN')
 line_bot_api = LineBotApi(lineaccesstoken)
-
-# conversation module
-con = Conversation("./database/data1.csv")
 
 
 @app.route('/')
@@ -61,11 +62,9 @@ def callback():
 
 
 def event_handle(event):
+    global c
     print(event)
 
-    print("before event")
-    print("conver_index",con.conver_index)
-    print("conver_type",con.conver_type)
     try:
         userId = event['source']['userId']
     except:
@@ -90,14 +89,12 @@ def event_handle(event):
     if msgType == "text":
         msg = str(event["message"]["text"])
 
-        con.push_msg(msg)
-        res_msg = con.response()
+        # socket request
+        res_msg = c.req(msg)
+
         replyObj = TextSendMessage(text=res_msg)
         print("Bot:",res_msg)
 
-        print("after event")
-        print("conver_index",con.conver_index)
-        print("conver_type",con.conver_type)
         line_bot_api.reply_message(rtoken, replyObj)
 
     else:
@@ -140,15 +137,24 @@ def expire_reminder_loop():
         schedule.run_pending()
         # print("running")
  
-        print("logging:")
-        print("conver_index",con.conver_index)
-        print("conver_type",con.conver_type)
+        # global variable not support in subprocess
+        # print("logging:")
+        # print("conver_index",con.conver_index)
+        # print("conver_type",con.conver_type)
 
         time.sleep(1)
 
 if __name__ == '__main__':
-    
-    p = Process(target=expire_reminder_loop)
-    p.start()  
+
+    host = socket.gethostname()
+    port = 10000
+
+    c = CustomSocket(host,port)
+    c.clientConnect()
+
     app.run(debug=True, port = 80, use_reloader=False)
-    p.join()
+
+    # p = Process(target=expire_reminder_loop)
+    # p.start()  
+    # app.run(debug=True, port = 80, use_reloader=False)
+    # p.join()
