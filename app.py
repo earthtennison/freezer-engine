@@ -44,7 +44,7 @@ host = socket.gethostname()
 port = 10000
 
 # delay
-time.sleep(5)
+time.sleep(10)
 
 c = CustomSocket(host,port)
 c.clientConnect()
