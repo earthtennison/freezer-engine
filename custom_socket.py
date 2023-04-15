@@ -45,7 +45,7 @@ class CustomSocket :
 		temp = msg
 		try :
 			temp = msg.encode('utf-8')
-			print("[TEXT SENT THROUG SOCKET]")
+			print("[TEXT SENT THROUGH SOCKET]")
 		except Exception as e :
 			# This message is an image
 			print("[IMAGE SENT THROUGH SOCKET]")
