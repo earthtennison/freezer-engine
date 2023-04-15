@@ -47,7 +47,11 @@ port = 10000
 time.sleep(5)
 
 c = CustomSocket(host,port)
-c.clientConnect()
+# c.clientConnect()
+
+connected = False
+while not connected:
+    connected = c.clientConnect()
 
 
 @app.route('/')

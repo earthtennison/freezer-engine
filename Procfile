@@ -1,3 +1,3 @@
-conversation:python conversation
 web: gunicorn app:app
-scheduler:python scheduler
+conversation:python conversation.py
+scheduler:python scheduler.py
