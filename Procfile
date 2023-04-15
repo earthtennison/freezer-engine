@@ -1,2 +1,1 @@
-conversation:python conversation.py
-scheduler:python scheduler.py
+web: gunicorn app:app & conversation:python conversation.py & wait -n
