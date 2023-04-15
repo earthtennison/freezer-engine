@@ -23,7 +23,6 @@ class CustomSocket :
 			# https://python-list.python.narkive.com/Y15bAxfI/socket-unbind-or-socket-unlisten-socket-error-48-address-already-in-use
 			self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 			self.sock.bind((self.host,self.port))
-			# self.sock.bind('0.0.0.0', self.port)
 			self.sock.listen(5)
 			self.isServer = True
 			print("[SOCKET SERVER START AT PORT "+str(self.port)+"]")
@@ -36,7 +35,6 @@ class CustomSocket :
 		try :
 			print("[Connecting to {}:{}]".format(self.host, self.port))
 			self.sock.connect((self.host,self.port))
-			# self.sock.connect(('0.0.0.0',self.port))
 			print("[SOCKET CLIENT CONNECTED TO "+str(self.host)+" "+str(self.port)+"]")
 		except Exception as e :
 			print("Error :",e)

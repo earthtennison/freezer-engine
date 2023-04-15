@@ -188,7 +188,7 @@ def main() :
 
 	con = Conversation("./database/data1.csv")
 
-	server = CustomSocket(socket.gethostname(),10000)
+	server = CustomSocket('0.0.0.0',10000) #host =socket.gethostname()
 	server.startServer()
 
 	while True:
