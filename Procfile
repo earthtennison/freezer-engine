@@ -1,1 +1,1 @@
-web: gunicorn app:app & conversation:python conversation.py & wait -n
+web: gunicorn app:app & python conversation.py & wait -n
