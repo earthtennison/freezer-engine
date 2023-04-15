@@ -30,6 +30,8 @@ from multiprocessing import Process
 from custom_socket import CustomSocket
 import socket
 
+import time
+
 
 app = Flask(__name__)
 
@@ -37,12 +39,6 @@ load_dotenv()
 
 lineaccesstoken = os.getenv('LINE_ACCESS_TOKEN')
 line_bot_api = LineBotApi(lineaccesstoken)
-
-host = socket.gethostname()
-port = 10000
-
-c = CustomSocket(host,port)
-c.clientConnect()
 
 
 @app.route('/')
@@ -120,6 +116,15 @@ def expire_reminder():
 
 
 if __name__ == '__main__':
+
+    host = socket.gethostname()
+    port = 10000
+
+    # delay
+    time.sleep(5)
+
+    c = CustomSocket(host,port)
+    c.clientConnect()
 
     app.run(debug=True, port = 80, use_reloader=False)
 
