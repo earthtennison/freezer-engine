@@ -1,3 +1,3 @@
-web: gunicorn app:app
 conversation:python conversation
+web: gunicorn app:app
 scheduler:python scheduler
