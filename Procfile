@@ -1,2 +1,1 @@
-web: gunicorn app:app
-worker: python conversation.py
+web: gunicorn app:master_deploy
