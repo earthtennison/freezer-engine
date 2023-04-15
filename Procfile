@@ -1,1 +1,1 @@
-web: gunicorn master_deploy:master_deploy
+worker: python master_deployment.py
