@@ -35,7 +35,8 @@ class CustomSocket :
 	def clientConnect(self) :
 		try :
 			print("[Connecting to {}:{}]".format(self.host, self.port))
-			self.sock.connect((self.host,self.port))
+			# self.sock.connect((self.host,self.port))
+			self.sock.connect(('0.0.0.0',self.port))
 			print("[SOCKET CLIENT CONNECTED TO "+str(self.host)+" "+str(self.port)+"]")
 		except Exception as e :
 			print("Error :",e)
