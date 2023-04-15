@@ -53,6 +53,7 @@ class CustomSocket :
 
 	def recvall(self,sock,n) :
 		data = bytearray()
+
 		while len(data) < n :
 			packet = sock.recv(n - len(data))
 			if not packet :

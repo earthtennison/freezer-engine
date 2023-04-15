@@ -23,11 +23,6 @@ from dotenv import load_dotenv
 
 from conversation import Conversation
 
-# time library
-import time
-from datetime import datetime, timedelta
-import schedule
-
 # multiprocess for parallel processing
 from multiprocessing import Process
 
@@ -42,6 +37,12 @@ load_dotenv()
 
 lineaccesstoken = os.getenv('LINE_ACCESS_TOKEN')
 line_bot_api = LineBotApi(lineaccesstoken)
+
+host = socket.gethostname()
+port = 10000
+
+c = CustomSocket(host,port)
+c.clientConnect()
 
 
 @app.route('/')
@@ -103,58 +104,26 @@ def event_handle(event):
         line_bot_api.reply_message(rtoken, replyObj)
     return ''
 
+@app.route('/reminder', methods=['GET'])
 def expire_reminder():
-    print("Bot: I am checking expiring items.")
-    msg = 'Expiring item! :'
-    item_cnt = 0
-    for idx, row in con.db.df.iterrows():
-        date_diff =  datetime.strptime(row['expiry_date'], '%d.%m.%Y') - datetime.now().replace(hour=0, minute=0, second=0)
-        if  date_diff.days + 1 < 2: # 2 days
-            msg += '\n- ' + row['name'] + ' is expired in ' + str(date_diff.days + 1) + ' days'
-            item_cnt += 1
+    global c
 
-    if item_cnt > 0:
-        replyObj = TextSendMessage(text=msg)
-        print("Bot:",msg)
-        # broadcast to all user
-        line_bot_api.broadcast(replyObj)
-    else:
-        msg = 'No item expiring today.'
-        print("Bot:", msg)
-        replyObj = TextSendMessage(text=msg)
-        print("Bot:",msg)
-        # broadcast to all user
-        line_bot_api.broadcast(replyObj)
+    print("Bot: I'm checking expiring items")
 
+    # socket request
+    res_msg = c.req('check')
+    
+    replyObj = TextSendMessage(text=res_msg)
+    # broadcast to all user
+    line_bot_api.broadcast(replyObj)
+    return res_msg
 
-def expire_reminder_loop():
-
-    # check every 10 am
-    schedule.every().day.at("10:00").do(expire_reminder)
-    # for debug
-    schedule.every(5).minutes.do(expire_reminder)
-    while True:
-        schedule.run_pending()
-        # print("running")
- 
-        # global variable not support in subprocess
-        # print("logging:")
-        # print("conver_index",con.conver_index)
-        # print("conver_type",con.conver_type)
-
-        time.sleep(1)
 
 if __name__ == '__main__':
 
-    host = socket.gethostname()
-    port = 10000
-
-    c = CustomSocket(host,port)
-    c.clientConnect()
-
     app.run(debug=True, port = 80, use_reloader=False)
 
-    # p = Process(target=expire_reminder_loop)
+    # p = Process(target=expire_reminder)
     # p.start()  
     # app.run(debug=True, port = 80, use_reloader=False)
     # p.join()

@@ -10,6 +10,7 @@ from datetime import datetime
 # custom socket
 from custom_socket import CustomSocket
 import socket
+import requests
 
 class Conversation():
 	def __init__(self, db_path):
@@ -50,13 +51,14 @@ class Conversation():
 			self.conver_index = 0
 			self.conver_type = 'default'
 
+		# check message type; checking all expiring items
+		elif self.current_msg.lower() == 'check':
+			self.conver_index = 0
+			self.conver_type = 'check'
+
 		# check if is initial message of the conversation
 		if self.conver_index == 0 and self.conver_type == '':
 			self.get_conver_type(self.current_msg)
-		
-		# print("check")
-		# print("conver_index:",self.conver_index)
-		# print("conver_type:",self.conver_type)
 
 
 
@@ -70,6 +72,23 @@ class Conversation():
 				"1. add item\n" + \
 				"2. update item\n" + \
 				"3. list item"
+		elif self.conver_type == 'check':
+			msg = 'Expiring item! :'
+			item_cnt = 0
+			for idx, row in self.db.df.iterrows():
+				date_diff =  datetime.strptime(row['expiry_date'], '%d.%m.%Y') - datetime.now().replace(hour=0, minute=0, second=0)
+				if  date_diff.days + 1 < 2: # 2 days
+					msg += '\n- ' + row['name'] + ' is expired in ' + str(date_diff.days + 1) + ' days'
+					item_cnt += 1
+
+			self.conver_index = 0
+			self.conver_type = ''
+
+			if item_cnt > 0:
+				return msg
+			else:
+				return 'No item expiring today.'
+
 		elif self.conver_type == 'add_item':
 			# switch case
 			if self.conver_index == 0:
@@ -161,6 +180,7 @@ class Conversation():
 			
 			return msg
 
+
 def main() :
 
 	con = Conversation("./database/data1.csv")
@@ -172,6 +192,7 @@ def main() :
 		try:
 			conn, addr = server.sock.accept()
 			print("Client connected from",addr)
+
 			while True:
 				data = server.recvMsg(conn)
 
