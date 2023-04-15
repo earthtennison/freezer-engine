@@ -41,7 +41,7 @@ lineaccesstoken = os.getenv('LINE_ACCESS_TOKEN')
 line_bot_api = LineBotApi(lineaccesstoken)
 
 # host = socket.gethostname()
-host = 'freezer-engine.herokuapp.com'
+host = ' http://freezer-engine.herokuapp.com'
 port = 10000
 
 # delay
