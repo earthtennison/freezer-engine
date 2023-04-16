@@ -2,3 +2,7 @@ venv/
 venv_acer/
 __pycache__/
 .env
+database/*
+!database/demo.csv
+image_db/*
+!image_db/demo.jpg

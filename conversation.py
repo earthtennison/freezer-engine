@@ -87,7 +87,7 @@ class Conversation():
 			for idx, row in self.db.df.iterrows():
 				if row['exist'] == True:
 					date_diff =  datetime.strptime(row['expiry_date'], '%d.%m.%Y') - datetime.now().replace(hour=0, minute=0, second=0)
-					if  0 <= date_diff.days + 1 < 2: # 0-2 days
+					if  0 <= date_diff.days + 1 < 7: # 0-7 days
 						msg += '\n- ' + row['name'] + ' is expired in ' + str(date_diff.days + 1) + ' days'
 						item_cnt += 1
 					elif date_diff.days + 1 < 0: # <0 days
@@ -122,7 +122,8 @@ class Conversation():
 				except ValueError:
 					print("Incorrect date format dd.mm.yyyy or dd.mm")
 					return {'type': "text", 'message': "Tell me the date again in format dd.mm.yyyy or dd.mm", 'aux_data':''}
-				self.item['expiry_date'] = date_str # todo set to default data format
+				self.item['expiry_date'] = date_str
+				self.item['add_date'] = datetime.now().strftime('%d.%m.%Y')
 				self.conver_index += 1
 				return {'type': "text", 'message': "How many piece of {}?".format(self.item['name']), 'aux_data':''}
 			elif self.conver_index == 3:
