@@ -12,14 +12,13 @@ port = 10000
 
 
 c = CustomSocket(host,port)
-c.clientConnect()
+# c.clientConnect()
 
 print("Connecting to server...")
 connected = False
 while not connected:
     connected = c.clientConnect()
-
-
+    time.sleep(1)
 
 
 while True:

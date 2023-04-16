@@ -9,8 +9,7 @@ from datetime import datetime
 
 # custom socket
 from custom_socket import CustomSocket
-import socket
-import requests
+import json
 
 class Conversation():
 	def __init__(self, db_path):
@@ -68,10 +67,12 @@ class Conversation():
 		if self.conver_type == 'default':
 			self.conver_index = 0
 			self.conver_type = ''
-			return "Hello, I am Freezer. Please tell me what to do:\n" + \
+			msg = "Hello, I am Freezer. Please tell me what to do:\n" + \
 				"1. add item\n" + \
 				"2. update item\n" + \
 				"3. list item"
+			return {'type': "text", 'message': msg, 'aux_data':''}
+				
 		elif self.conver_type == 'check':
 			msg = 'Expiring item! :'
 			item_cnt = 0
@@ -88,19 +89,19 @@ class Conversation():
 			self.conver_type = ''
 
 			if item_cnt > 0:
-				return msg
+				return {'type': "text", 'message': msg, 'aux_data':''}
 			else:
-				return 'No item expiring today.'
+				return {'type': "text", 'message': 'No item expiring today.', 'aux_data':''}
 
 		elif self.conver_type == 'add_item':
 			# switch case
 			if self.conver_index == 0:
 				self.conver_index += 1
-				return "What's the name of item?"
+				return {'type': "text", 'message': "What's the name of item?", 'aux_data':''}
 			elif self.conver_index == 1:
 				self.item['name'] = self.current_msg.lower()
 				self.conver_index += 1
-				return "What's the date of expiration?"
+				return {'type': "text", 'message': "What's the date of expiration?", 'aux_data':''}
 			elif self.conver_index == 2:
 				date_str = self.current_msg
 				try:
@@ -111,18 +112,18 @@ class Conversation():
 						date_str += '.2023'
 				except ValueError:
 					print("Incorrect date format dd.mm.yyyy or dd.mm")
-					return "Tell me the date again in format dd.mm.yyyy or dd.mm"
+					return {'type': "text", 'message': "Tell me the date again in format dd.mm.yyyy or dd.mm", 'aux_data':''}
 				self.item['expiry_date'] = date_str # todo set to default data format
 				self.conver_index += 1
-				return "How many piece of {}?".format(self.item['name'])
+				return {'type': "text", 'message': "How many piece of {}?".format(self.item['name']), 'aux_data':''}
 			elif self.conver_index == 3:
 				try:
 					self.item['quantity'] = int(self.current_msg)
 				except ValueError:
 					print("Incorrect quantity format")
-					return "Tell me the quantity again"
+					return {'type': "text", 'message': "Tell me the quantity again", 'aux_data':''}
 				self.conver_index += 1
-				return "Where will you store the item? fridge home, fridge back home, fridge condo, cabinet" # todo show flex icon
+				return {'type': "text", 'message': "Where will you store the item? fridge home, fridge back home, fridge condo, cabinet", 'aux_data':''}
 			elif self.conver_index == 4:
 				self.item['store_place'] = self.current_msg
 
@@ -132,13 +133,13 @@ class Conversation():
 				self.conver_index = 0
 				self.conver_type = ''
 
-				return "Roger that!"
+				return {'type': "text", 'message': "Roger that!", 'aux_data':''}
 			# todo add picture
 				
 		elif self.conver_type == 'update_item':
 			if self.conver_index == 0:
 				self.conver_index += 1
-				return "What's the name of item you want to update?"
+				return {'type': "text", 'message': "What's the name of item you want to update?", 'aux_data':''}
 			elif self.conver_index == 1:
 				self.item['name'] = self.current_msg.lower()
 				# check if item is in database
@@ -148,9 +149,9 @@ class Conversation():
 					self.conver_index = 0
 					self.conver_type = ''
 
-					return 'Item is not in the list'
+					return {'type': "text", 'message': 'Item is not in the list', 'aux_data':''}
 				self.conver_index += 1
-				return "What's the new quantity?"
+				return ('text', "What's the new quantity?", '')
 			elif self.conver_index == 2:
 				self.item['quantity'] = int(self.current_msg)
 				if self.item['quantity'] == 0:
@@ -161,7 +162,7 @@ class Conversation():
 					self.conver_index = 0
 					self.conver_type = ''
 
-					return "I deleted {}".format(self.item['name'])
+					return {'type': "text", 'message': "I deleted {}".format(self.item['name']), 'aux_data':''}
 				else:
 					# update item
 					self.db.df.loc[self.db.df['name'] == self.item['name'],'quantity'] = self.item['quantity']
@@ -170,7 +171,7 @@ class Conversation():
 					self.conver_index = 0
 					self.conver_type = ''
 
-					return "{} updated".format(self.item['name'])
+					return {'type': "text", 'message': "{} updated".format(self.item['name']), 'aux_data':''}
 
 
 		elif self.conver_type == 'list_item':
@@ -181,7 +182,7 @@ class Conversation():
 			self.conver_index = 0
 			self.conver_type = ""
 			
-			return msg
+			return {'type': "text", 'message': msg, 'aux_data':''}
 
 
 def main() :
@@ -205,7 +206,8 @@ def main() :
 				con.push_msg(data.decode('utf-8'))
 				res = con.response()
 				print(res)
-				server.sendMsg(conn, res)
+				# send as dictionary
+				server.sendMsg(conn, json.dumps(res))
 		
 		except Exception as e :
 			print(e)

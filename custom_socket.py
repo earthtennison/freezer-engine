@@ -48,7 +48,7 @@ class CustomSocket :
 			print("[TEXT SENT THROUGH SOCKET]")
 		except Exception as e :
 			# This message is an image
-			print("[IMAGE SENT THROUGH SOCKET]")
+			print("[JSON SENT THROUGH SOCKET]")
 		msg = struct.pack('>I', len(temp)) + temp
 		print("msg",msg)
 		sock.sendall(msg)
@@ -76,8 +76,8 @@ class CustomSocket :
 		if type(msg) == str:
 			self.sendMsg(self.sock,msg)
 			result = self.recvMsg(self.sock).decode('utf-8')
-			return result
-		else: # msg is image
+			return json.loads(result)
+		else:
 			self.sendMsg(self.sock,msg.tobytes())
 			result = self.recvMsg(self.sock)
 			result = result.decode('utf-8')
@@ -111,7 +111,7 @@ def main() :
 				# img = np.frombuffer(data ,dtype=np.uint8).reshape(480,640,3)
 				# print(img)
 				print(data)
-				server.sendMsg(conn, data)
+				server.sendMsg(conn, json.dumps({'a':'1','b':'2','c':'3'}))
 
 		except Exception as e :
 			print(e)

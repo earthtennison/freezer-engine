@@ -10,9 +10,7 @@ import json
 import numpy as np
 import pandas as pd
 
-from linebot.models import (
-    MessageEvent, TextMessage, TextSendMessage,TemplateSendMessage,ImageSendMessage, StickerSendMessage, AudioSendMessage
-)
+from linebot.models import *
 from linebot.models.template import *
 from linebot import (
     LineBotApi, WebhookHandler
@@ -44,15 +42,13 @@ host = socket.gethostname()
 # host = ' http://freezer-engine.herokuapp.com'
 port = 10000
 
-# delay
-time.sleep(5)
-
 c = CustomSocket(host,port)
 # c.clientConnect()
 
 connected = False
 while not connected:
     connected = c.clientConnect()
+    time.sleep(1)
 
 
 @app.route('/')
@@ -101,12 +97,25 @@ def event_handle(event):
         msg = str(event["message"]["text"])
 
         # socket request
-        res_msg = c.req(msg)
+        res = c.req(msg)
+        print(res)
 
-        replyObj = TextSendMessage(text=res_msg)
-        print("Bot:",res_msg)
+        # res_msg structure: {'type': , 'message': , 'aux_data'}
+        # eg. "text", "hello", "
+        # "quick_reply","select this", ["1","2","3"]
+        # "image", "", "image url"
 
-        line_bot_api.reply_message(rtoken, replyObj)
+        if res['type'] == "text":
+            replyObj = TextSendMessage(text=res['message'])
+            print("Bot:",res['message'])
+
+            line_bot_api.reply_message(rtoken, replyObj)
+        elif res['type'] == "quick_reply":
+            items = [QuickReplyButton(action=MessageAction(label=t, text=t)) for t in res['aux_data']]
+            text_message = TextSendMessage(text='Hello, world',
+                quick_reply=QuickReply(items=items))
+        elif res['type'] == "image":
+            pass
 
     else:
         sk_id = np.random.randint(1,17)
