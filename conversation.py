@@ -15,6 +15,8 @@ from random import randint
 
 import os
 
+import numpy as np
+
 class Conversation():
 	def __init__(self, db_path):
 
@@ -26,7 +28,7 @@ class Conversation():
 
 		self.conver_index = 0
 
-		self.item = {'name':None, 'expiry_date':None, 'store_place':None, 'quantity':None, 'category':None}
+		self.item = {'name':'', 'expiry_date':None, 'store_place':'', 'quantity':0, 'category':'', 'exist':True, 'image_id':'', 'add_date': None}
 
 		self.db = csv_database(db_path)
 
@@ -83,13 +85,14 @@ class Conversation():
 			msg = 'Expiring item! :'
 			item_cnt = 0
 			for idx, row in self.db.df.iterrows():
-				date_diff =  datetime.strptime(row['expiry_date'], '%d.%m.%Y') - datetime.now().replace(hour=0, minute=0, second=0)
-				if  0 <= date_diff.days + 1 < 2: # 0-2 days
-					msg += '\n- ' + row['name'] + ' is expired in ' + str(date_diff.days + 1) + ' days'
-					item_cnt += 1
-				elif date_diff.days + 1 < 0: # <0 days
-					msg += '\n- '+ row['name'] +' is expired ' + str(-1*(date_diff.days + 1)) + ' days ago'
-					item_cnt += 1
+				if row['exist'] == True:
+					date_diff =  datetime.strptime(row['expiry_date'], '%d.%m.%Y') - datetime.now().replace(hour=0, minute=0, second=0)
+					if  0 <= date_diff.days + 1 < 2: # 0-2 days
+						msg += '\n- ' + row['name'] + ' is expired in ' + str(date_diff.days + 1) + ' days'
+						item_cnt += 1
+					elif date_diff.days + 1 < 0: # <0 days
+						msg += '\n- '+ row['name'] +' is expired ' + str(-1*(date_diff.days + 1)) + ' days ago'
+						item_cnt += 1
 
 			self.conver_index = 0
 			self.conver_type = ''
@@ -140,14 +143,15 @@ class Conversation():
 
 				# if user sent image
 				if self.current_msg == 'save image':
-					image_path = os.path.join(self.image_db_path, self.item['name'] + '_' + str(self.item['quantity'])+'_'+str(randint(100, 999)) + '.jpg')
+					self.item['image_id'] = self.item['name'] + '_' + str(randint(100, 999))
+					image_path = os.path.join(self.image_db_path, self.item['image_id'] + '.jpg')
 					
 					# push item to database
 					self.db.push(self.item)
 
 					self.conver_index = 0
 					self.conver_type = ''
-					
+
 					return {'type': "image",'message': "Roger that!", 'aux_data':image_path}
 
 				# if user sent text
@@ -165,22 +169,42 @@ class Conversation():
 				self.conver_index += 1
 				return {'type': "text", 'message': "What's the name of item you want to update?", 'aux_data':''}
 			elif self.conver_index == 1:
-				self.item['name'] = self.current_msg.lower()
-				# check if item is in database
-				if self.item['name'] not in self.db.df['name'].to_list():
-					print("Bot: Item is not in the list")
 
-					self.conver_index = 0
-					self.conver_type = ''
+				# check if is answer from quick reply
+				if '_' in self.current_msg.lower():
+					self.item['name'] = self.current_msg.lower().split('_')[0]
+					self.item['store_place'] = self.current_msg.lower().split('_')[1]
+				else:
 
-					return {'type': "text", 'message': 'Item is not in the list', 'aux_data':''}
+					self.item['name'] = self.current_msg.lower()
+					# check if item is in database
+					if self.item['name'] not in self.db.df['name'].to_list():
+						print("Bot: Item is not in the list")
+
+						self.conver_index = 0
+						self.conver_type = ''
+
+						return {'type': "text", 'message': 'Item is not in the list', 'aux_data':''}
+					else:
+						# check if items are in many locations
+						print(self.db.df.loc[(self.db.df['name'] == self.item['name']) & self.db.df['exist'], 'store_place'])
+						if len(self.db.df.loc[(self.db.df['name'] == self.item['name']) & self.db.df['exist'], 'store_place']) > 1:
+							store_places = self.db.df.loc[(self.db.df['name'] == self.item['name']) & self.db.df['exist'], 'store_place'].to_list()
+							return {'type':'quick_reply', 'message':'Please select item location', 'aux_data':[self.item['name']+'_'+p for p in store_places]}
+					
+						else:
+							# there is one item
+							self.item['store_place'] = self.db.df.loc[self.db.df['name'] == self.item['name'],'store_place'].to_list()[0]
 				self.conver_index += 1
-				return ('text', "What's the new quantity?", '')
+				return {'type': "text", 'message': "What's the new quantity?", 'aux_data':''}
 			elif self.conver_index == 2:
 				self.item['quantity'] = int(self.current_msg)
 				if self.item['quantity'] == 0:
 					# delete item
-					self.db.df = self.db.df.loc[self.db.df['name'] != self.item['name']]
+					# self.db.df = self.db.df.loc[self.db.df['name'] != self.item['name']]
+					index = self.db.df.loc[(self.db.df['name'] == self.item['name']) & (self.db.df['store_place'] == self.item['store_place'])& self.item['exist']==True].index[0]
+					self.db.df.loc[index, 'exist'] = False
+					# self.db.df.loc[self.db.df['name'] == self.item['name'],'exist'] = False
 					self.db.save_csv()
 
 					self.conver_index = 0
@@ -189,7 +213,12 @@ class Conversation():
 					return {'type': "text", 'message': "I deleted {}".format(self.item['name']), 'aux_data':''}
 				else:
 					# update item
-					self.db.df.loc[self.db.df['name'] == self.item['name'],'quantity'] = self.item['quantity']
+					# print(self.item)
+					# print(self.db.df.loc[(self.db.df['name'] == self.item['name']) & (self.db.df['store_place'] == self.item['store_place']) & self.item['exist'] ==True])
+					index = self.db.df.loc[(self.db.df['name'] == self.item['name']) & (self.db.df['store_place'] == self.item['store_place'])& (self.item['exist']==True)].index[0]
+					self.db.df.loc[index, 'quantity'] = self.item['quantity']
+					
+					
 					self.db.save_csv()
 
 					self.conver_index = 0
@@ -200,8 +229,16 @@ class Conversation():
 
 		elif self.conver_type == 'list_item':
 			msg = "Here's all items:\n"
-			for idx, row in self.db.df.iterrows():
-				msg += '- ' + row['name'] + '\n'
+			for place in self.db.df.store_place.unique():
+				# check if there is item in that place
+				if len(self.db.df.loc[(self.db.df['store_place'] == place) & self.db.df['exist']]) > 0:
+					msg += place + "\n"
+				else:
+					continue
+				for idx, row in self.db.df.loc[self.db.df['store_place'] == place].iterrows():
+					if row['exist'] == True:
+						date_diff =  datetime.strptime(row['expiry_date'], '%d.%m.%Y') - datetime.now().replace(hour=0, minute=0, second=0)
+						msg += '- {} {} p. {} days left\n'.format(row['name'], row['quantity'], str(date_diff.days + 1))
 			
 			self.conver_index = 0
 			self.conver_type = ""
