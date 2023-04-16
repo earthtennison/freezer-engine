@@ -49,7 +49,8 @@ class CustomSocket :
 		except Exception as e :
 			# This message is an image
 			print("[IMAGE SENT THROUGH SOCKET]")
-		msg = struct.pack('>I', len(msg)) + temp
+		msg = struct.pack('>I', len(temp)) + temp
+		print("msg",msg)
 		sock.sendall(msg)
 
 	def recvall(self,sock,n) :
