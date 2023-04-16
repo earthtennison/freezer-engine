@@ -129,6 +129,8 @@ class Conversation():
 			elif self.conver_index == 3:
 				try:
 					self.item['quantity'] = int(self.current_msg)
+					if self.item['quantity'] <= 0:
+						return {'type': "text",'message': "Tell me the quantity again", 'aux_data':''}
 				except ValueError:
 					print("Incorrect quantity format")
 					return {'type': "text", 'message': "Tell me the quantity again", 'aux_data':''}

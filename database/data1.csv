@@ -12,9 +12,12 @@ shake,13.6.2023,fridge home,1,,,,2.0,
 ice,01.06.2023,Fridge condo,5,,,,2.0,
 เนื้อ,12.5.2023,fridge home,1,,,,2.0,
 denie,12.12.2023,fridge home,1,,,,2.0,
-ee,4.5.2023,fridge home,1,,,,2.0,
+ee,4.5.2023,fridge home,1,,False,,2.0,
 er,2.3.2023,fridge home,1,,,,2.0,
 eh,23.4.2023,fridge home,1,,False,eh_502,2.0,
-earth,3.5.2023,fridge condo,2,,False,,2.0,
+earth,3.5.2023,fridge condo,8,,False,,2.0,
 earth,4.5.2023,fridge home,10,,True,,2.0,
 t,4.7.2023,fridge back home,6,,True,,,16.04.2023
+ice,30.6.2023,fridge condo,1,,True,ice_882,,16.04.2023
+ethod,01.06.2023,fridge home,2,,False,ethod_104,,16.04.2023
+ee,02.09.2023,fridge home,0,,True,ethod_104,,16.04.2023
