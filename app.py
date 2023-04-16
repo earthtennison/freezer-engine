@@ -3,6 +3,7 @@
 ##from __future__ import absolute_import
 ###
 # ref: https://medium.com/linedevth/%E0%B8%AA%E0%B8%A3%E0%B9%89%E0%B8%B2%E0%B8%87-line-chatbot-%E0%B8%94%E0%B9%89%E0%B8%A7%E0%B8%A2%E0%B8%A0%E0%B8%B2%E0%B8%A9%E0%B8%B2-python-84750b353fba
+# ref of socket communication: https://github.com/robocup-eic/robocup2022-cv-yolov5/blob/main/yolov5.py
 ################################
 from urllib.parse import uses_relative
 from flask import Flask, jsonify, render_template, request
@@ -108,14 +109,43 @@ def event_handle(event):
         if res['type'] == "text":
             replyObj = TextSendMessage(text=res['message'])
             print("Bot:",res['message'])
-
             line_bot_api.reply_message(rtoken, replyObj)
         elif res['type'] == "quick_reply":
             items = [QuickReplyButton(action=MessageAction(label=t, text=t)) for t in res['aux_data']]
-            text_message = TextSendMessage(text='Hello, world',
+            replyObj = TextSendMessage(text=res['message'],
                 quick_reply=QuickReply(items=items))
+            line_bot_api.reply_message(rtoken, replyObj)
         elif res['type'] == "image":
-            pass
+            camera_item = QuickReplyButton(action=CameraAction(label='camera'))
+            text_item = QuickReplyButton(action=MessageAction(label='no', text='no'))
+            replyObj = TextSendMessage(text=res['message'],
+                quick_reply=QuickReply(items=[camera_item, text_item]))
+            line_bot_api.reply_message(rtoken, replyObj)
+    elif msgType == 'image':
+        message_id = str(event["message"]["id"])
+
+        message_content = line_bot_api.get_message_content(message_id)
+
+        print(type(message_content))
+        print(message_content)
+
+        res = c.req('save image')
+        if res['type'] == 'image':
+            # save image
+            image_path = res['aux_data']
+            with open(image_path, 'wb') as fd:
+                for chunk in message_content.iter_content():
+                    fd.write(chunk)
+
+            replyObj = TextSendMessage(text=res['message'])
+            print("Bot:",res['message'])
+            line_bot_api.reply_message(rtoken, replyObj)
+        elif res['type'] == "quick_reply":
+            items = [QuickReplyButton(action=MessageAction(label=t, text=t)) for t in res['aux_data']]
+            replyObj = TextSendMessage(text=res['message'],
+                quick_reply=QuickReply(items=items))
+            line_bot_api.reply_message(rtoken, replyObj)
+
 
     else:
         sk_id = np.random.randint(1,17)

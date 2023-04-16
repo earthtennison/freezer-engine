@@ -11,6 +11,10 @@ from datetime import datetime
 from custom_socket import CustomSocket
 import json
 
+from random import randint
+
+import os
+
 class Conversation():
 	def __init__(self, db_path):
 
@@ -25,6 +29,8 @@ class Conversation():
 		self.item = {'name':None, 'expiry_date':None, 'store_place':None, 'quantity':None, 'category':None}
 
 		self.db = csv_database(db_path)
+
+		self.image_db_path = './image_db'
 
 
 
@@ -71,7 +77,7 @@ class Conversation():
 				"1. add item\n" + \
 				"2. update item\n" + \
 				"3. list item"
-			return {'type': "text", 'message': msg, 'aux_data':''}
+			return {'type': "quick_reply", 'message': msg, 'aux_data':['add item', 'update item', 'list item']}
 				
 		elif self.conver_type == 'check':
 			msg = 'Expiring item! :'
@@ -123,18 +129,36 @@ class Conversation():
 					print("Incorrect quantity format")
 					return {'type': "text", 'message': "Tell me the quantity again", 'aux_data':''}
 				self.conver_index += 1
-				return {'type': "text", 'message': "Where will you store the item? fridge home, fridge back home, fridge condo, cabinet", 'aux_data':''}
+				return {'type': "quick_reply", 'message': "Where will you store the item?", 'aux_data':['fridge home', 'fridge condo', 'fridge back home', 'cabinet home', 'cabinet condo']}
+			
 			elif self.conver_index == 4:
 				self.item['store_place'] = self.current_msg
+				self.conver_index += 1
+				return {'type': "image", 'message': "Please give me a photo of that item", 'aux_data':''}
+			
+			elif self.conver_index == 5:
 
-				# push item to database
-				self.db.push(self.item)
+				# if user sent image
+				if self.current_msg == 'save image':
+					image_path = os.path.join(self.image_db_path, self.item['name'] + '_' + str(self.item['quantity'])+'_'+str(randint(100, 999)) + '.jpg')
+					
+					# push item to database
+					self.db.push(self.item)
 
-				self.conver_index = 0
-				self.conver_type = ''
+					self.conver_index = 0
+					self.conver_type = ''
+					
+					return {'type': "image",'message': "Roger that!", 'aux_data':image_path}
 
-				return {'type': "text", 'message': "Roger that!", 'aux_data':''}
-			# todo add picture
+				# if user sent text
+				else:
+					# push item to database
+					self.db.push(self.item)
+
+					self.conver_index = 0
+					self.conver_type = ''
+
+					return {'type': "text", 'message': "Roger that!", 'aux_data':''}
 				
 		elif self.conver_type == 'update_item':
 			if self.conver_index == 0:
