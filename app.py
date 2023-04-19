@@ -162,7 +162,7 @@ def expire_reminder():
     # socket request
     res_msg = c.req('check')
     
-    replyObj = TextSendMessage(text=res_msg)
+    replyObj = TextSendMessage(text=res_msg['message'])
     # broadcast to all user
     line_bot_api.broadcast(replyObj)
     return res_msg
@@ -170,7 +170,7 @@ def expire_reminder():
 
 if __name__ == '__main__':
 
-    app.run(debug=True, port = 80, use_reloader=False)
+    app.run(debug=True, port = 4000, use_reloader=False)
 
     # p = Process(target=expire_reminder)
     # p.start()  
