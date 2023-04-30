@@ -9,3 +9,4 @@ image_db/*
 venv_server/
 .swp
 ngrok.log
+.vscode

@@ -26,8 +26,8 @@ class csv_database:
 
     def load_csv(self):
         self.df = pd.read_csv(self.file_path)
-        print("Loaded {}:".format(self.file_path))
-        print(self.df)
+        # print("Loaded {}:".format(self.file_path))
+        # print(self.df)
 
 
 if __name__ == '__main__':

@@ -17,6 +17,8 @@ import os
 
 import numpy as np
 
+import socket
+
 class Conversation():
 	def __init__(self, db_path):
 
@@ -235,7 +237,7 @@ class Conversation():
 			for place in self.db.df.store_place.unique():
 				# check if there is item in that place
 				if len(self.db.df.loc[(self.db.df['store_place'] == place) & self.db.df['exist']]) > 0:
-					msg += place + "\n"
+					msg += "\n" + place + "\n"
 				else:
 					continue
 				for idx, row in self.db.df.loc[self.db.df['store_place'] == place].iterrows():
@@ -253,30 +255,38 @@ def main() :
 
 	con = Conversation("./database/data1.csv")
 
-	server = CustomSocket('0.0.0.0',10000) #host =socket.gethostname()
-	print("[Starting server]")
+	server = CustomSocket('127.0.0.1', 10000, 'Socket server') #host =socket.gethostname()
+	print("[Socket server] Starting...")
 	server.startServer()
 	
 
 	while True:
 		try:
 			conn, addr = server.sock.accept()
-			print("Client connected from",addr)
+			print("[Socket server] Client connected from",addr)
 
 			while True:
 				data = server.recvMsg(conn)
 
-				print(data.decode('utf-8'))
+				print('[Socket server] Received data: {}'.format(data.decode('utf-8')))
 				con.push_msg(data.decode('utf-8'))
 				res = con.response()
-				print(res)
+				print('[Socket server] Responds: {}'.format(res))
 				# send as dictionary
 				server.sendMsg(conn, json.dumps(res))
 		
 		except Exception as e :
-			print(e)
-			print("Connection Closed")
-			break
+			print('[Socket server] Error: {}'.format(e))
+
+			# restart the server
+			print('[Socket server] Restarting...')
+			server = CustomSocket('127.0.0.1',10000, 'Socket server') #host =socket.gethostname()
+			server.startServer()
+
+			continue
+
+			# print("Connection Closed")
+			# break
 
 
 def manual_input_main():

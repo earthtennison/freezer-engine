@@ -10,12 +10,13 @@ import json
 
 class CustomSocket :
 
-	def __init__(self,host,port) :
+	def __init__(self,host,port,socket_name) :
 		self.host = host
 		self.port = port
 		self.SPLITTER = b","
 		self.sock = socket.socket()
 		self.isServer = False
+		self.socket_name = socket_name
 
 	def startServer(self) :
 		try :
@@ -25,7 +26,7 @@ class CustomSocket :
 			self.sock.bind((self.host,self.port))
 			self.sock.listen(5)
 			self.isServer = True
-			print("[SOCKET SERVER START AT PORT "+str(self.port)+"]")
+			print("[{}] Started at port {}".format(self.socket_name, str(self.port)))
 		except Exception as e :
 			print("Error :",e)
 			return False
@@ -33,9 +34,9 @@ class CustomSocket :
 
 	def clientConnect(self) :
 		try :
-			print("[Connecting to {}:{}]".format(self.host, self.port))
+			print("[Socket client] Connecting to {}:{}]".format(self.host, self.port))
 			self.sock.connect((self.host,self.port))
-			print("[SOCKET CLIENT CONNECTED TO "+str(self.host)+" "+str(self.port)+"]")
+			print("[Socket client] Connected to {}:{}]".format(self.host, self.port))
 		except Exception as e :
 			print("Error :",e)
 			return False
@@ -45,12 +46,12 @@ class CustomSocket :
 		temp = msg
 		try :
 			temp = msg.encode('utf-8')
-			print("[TEXT SENT THROUGH SOCKET]")
+			print("[{}] Data sent through socket".format(self.socket_name))
 		except Exception as e :
 			# This message is an image
-			print("[JSON SENT THROUGH SOCKET]")
+			print("[{}] Image sent through socket".format(self.socket_name))
 		msg = struct.pack('>I', len(temp)) + temp
-		print("msg",msg)
+		# print("msg",msg)
 		sock.sendall(msg)
 
 	def recvall(self,sock,n) :
