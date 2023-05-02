@@ -8,5 +8,5 @@ image_db/*
 !image_db/demo.jpg
 venv_server/
 .swp
-ngrok.log
 .vscode
+*.log
