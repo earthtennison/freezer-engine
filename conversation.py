@@ -19,6 +19,10 @@ import numpy as np
 
 import socket
 
+import logging
+
+logging.basicConfig(filename='app.log', encoding='utf-8', level=logging.DEBUG)
+
 class Conversation():
 	def __init__(self, db_path):
 
@@ -53,7 +57,6 @@ class Conversation():
 
 	def push_msg(self, current_msg):
 		self.current_msg = current_msg
-		# print("Bot:",self.current_msg)
 
 		# check cancel message
 		if self.current_msg.lower() in ['cancel', 'stop']:
@@ -122,7 +125,7 @@ class Conversation():
 						date_obj = datetime.strptime(date_str, '%d.%m')
 						date_str += '.2023'
 				except ValueError:
-					print("Incorrect date format dd.mm.yyyy or dd.mm")
+					logging.info("Incorrect date format dd.mm.yyyy or dd.mm")
 					return {'type': "text", 'message': "Tell me the date again in format dd.mm.yyyy or dd.mm", 'aux_data':''}
 				self.item['expiry_date'] = date_str
 				self.item['add_date'] = datetime.now().strftime('%d.%m.%Y')
@@ -134,7 +137,7 @@ class Conversation():
 					if self.item['quantity'] <= 0:
 						return {'type': "text",'message': "Tell me the quantity again", 'aux_data':''}
 				except ValueError:
-					print("Incorrect quantity format")
+					logging.info("Incorrect quantity format")
 					return {'type': "text", 'message': "Tell me the quantity again", 'aux_data':''}
 				self.conver_index += 1
 				return {'type': "quick_reply", 'message': "Where will you store the item?", 'aux_data':['fridge home', 'fridge condo', 'fridge back home', 'cabinet home', 'cabinet condo']}
@@ -184,7 +187,7 @@ class Conversation():
 					self.item['name'] = self.current_msg.lower()
 					# check if item is in database
 					if self.item['name'] not in self.db.df['name'].to_list():
-						print("Bot: Item is not in the list")
+						logging.info("Bot: Item is not in the list")
 
 						self.conver_index = 0
 						self.conver_type = ''
@@ -192,7 +195,7 @@ class Conversation():
 						return {'type': "text", 'message': 'Item is not in the list', 'aux_data':''}
 					else:
 						# check if items are in many locations
-						print(self.db.df.loc[(self.db.df['name'] == self.item['name']) & self.db.df['exist'], 'store_place'])
+						logging.info(self.db.df.loc[(self.db.df['name'] == self.item['name']) & self.db.df['exist'], 'store_place'])
 						if len(self.db.df.loc[(self.db.df['name'] == self.item['name']) & self.db.df['exist'], 'store_place']) > 1:
 							store_places = self.db.df.loc[(self.db.df['name'] == self.item['name']) & self.db.df['exist'], 'store_place'].to_list()
 							return {'type':'quick_reply', 'message':'Please select item location', 'aux_data':[self.item['name']+'_'+p for p in store_places]}
@@ -218,8 +221,6 @@ class Conversation():
 					return {'type': "text", 'message': "I deleted {}".format(self.item['name']), 'aux_data':''}
 				else:
 					# update item
-					# print(self.item)
-					# print(self.db.df.loc[(self.db.df['name'] == self.item['name']) & (self.db.df['store_place'] == self.item['store_place']) & self.item['exist'] ==True])
 					index = self.db.df.loc[(self.db.df['name'] == self.item['name']) & (self.db.df['store_place'] == self.item['store_place'])& (self.item['exist']==True)].index[0]
 					self.db.df.loc[index, 'quantity'] = self.item['quantity']
 					
@@ -256,37 +257,34 @@ def main() :
 	con = Conversation("./database/data1.csv")
 
 	server = CustomSocket('127.0.0.1', 10000, 'Socket server') #host =socket.gethostname()
-	print("[Socket server] Starting...")
+	logging.info("[Socket server] Starting...")
 	server.startServer()
 	
 
 	while True:
 		try:
 			conn, addr = server.sock.accept()
-			print("[Socket server] Client connected from",addr)
+			logging.info("[Socket server] Client connected from {}".format(addr))
 
 			while True:
 				data = server.recvMsg(conn)
 
-				print('[Socket server] Received data: {}'.format(data.decode('utf-8')))
+				logging.info('[Socket server] Received data: {}'.format(data.decode('utf-8')))
 				con.push_msg(data.decode('utf-8'))
 				res = con.response()
-				print('[Socket server] Responds: {}'.format(res))
+				logging.info('[Socket server] Responds: {}'.format(res))
 				# send as dictionary
 				server.sendMsg(conn, json.dumps(res))
 		
 		except Exception as e :
-			print('[Socket server] Error: {}'.format(e))
+			logging.error('[Socket server] Error: {}'.format(e))
 
 			# restart the server
-			print('[Socket server] Restarting...')
+			logging.info('[Socket server] Restarting...')
 			server = CustomSocket('127.0.0.1',10000, 'Socket server') #host =socket.gethostname()
 			server.startServer()
 
 			continue
-
-			# print("Connection Closed")
-			# break
 
 
 def manual_input_main():

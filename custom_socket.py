@@ -7,6 +7,7 @@ import socket
 import struct
 import numpy as np
 import json
+import logging
 
 class CustomSocket :
 
@@ -26,19 +27,19 @@ class CustomSocket :
 			self.sock.bind((self.host,self.port))
 			self.sock.listen(5)
 			self.isServer = True
-			print("[{}] Started at port {}".format(self.socket_name, str(self.port)))
+			logging.info("[{}] Started at port {}".format(self.socket_name, str(self.port)))
 		except Exception as e :
-			print("Error :",e)
+			logging.error("Error : {}".format(e))
 			return False
 		return True
 
 	def clientConnect(self) :
 		try :
-			print("[Socket client] Connecting to {}:{}]".format(self.host, self.port))
+			logging.info("[Socket client] Connecting to {}:{}]".format(self.host, self.port))
 			self.sock.connect((self.host,self.port))
-			print("[Socket client] Connected to {}:{}]".format(self.host, self.port))
+			logging.info("[Socket client] Connected to {}:{}]".format(self.host, self.port))
 		except Exception as e :
-			print("Error :",e)
+			logging.error("Error : {}".format(e))
 			return False
 		return True
 
@@ -46,12 +47,11 @@ class CustomSocket :
 		temp = msg
 		try :
 			temp = msg.encode('utf-8')
-			print("[{}] Data sent through socket".format(self.socket_name))
+			logging.info("[{}] Data sent through socket".format(self.socket_name))
 		except Exception as e :
 			# This message is an image
-			print("[{}] Image sent through socket".format(self.socket_name))
+			logging.info("[{}] Image sent through socket".format(self.socket_name))
 		msg = struct.pack('>I', len(temp)) + temp
-		# print("msg",msg)
 		sock.sendall(msg)
 
 	def recvall(self,sock,n) :
@@ -105,7 +105,7 @@ def main() :
 	while True:
 		try:
 			conn, addr = server.sock.accept()
-			print("Client connected from",addr)
+			logging.info("Client connected from".format(addr))
 			while True:
 				
 				data = server.recvMsg(conn)

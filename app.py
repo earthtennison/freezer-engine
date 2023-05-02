@@ -31,6 +31,10 @@ import socket
 
 import time
 
+import logging
+
+logging.basicConfig(filename='app.log', encoding='utf-8', level=logging.DEBUG)
+
 
 app = Flask(__name__)
 
@@ -71,24 +75,24 @@ def callback():
 
 def event_handle(event):
     global c
-    print('[Flask server] Webhook received event: {}'.format(event))
+    logging.info('[Flask server] Webhook received event: {}'.format(event))
 
     try:
         userId = event['source']['userId']
     except:
-        print('error cannot get userId')
+        logging.error('error cannot get userId')
         return ''
 
     try:
         rtoken = event['replyToken']
     except:
-        print('error cannot get rtoken')
+        logging.error('error cannot get rtoken')
         return ''
     try:
         msgId = event["message"]["id"]
         msgType = event["message"]["type"]
     except:
-        print('error cannot get msgID, and msgType')
+        logging.error('error cannot get msgID, and msgType')
         sk_id = np.random.randint(1,17)
         replyObj = StickerSendMessage(package_id=str(1),sticker_id=str(sk_id))
         line_bot_api.reply_message(rtoken, replyObj)
@@ -100,8 +104,9 @@ def event_handle(event):
         # socket request
         try:
             res = c.req(msg)
-            print('[Flask server] Bot responds: {}'.format(res))
-        except socket.error:
+            logging.info('[Flask server] Bot responds: {}'.format(res))
+        except socket.error as e:
+            logging.info('[Flask server] Error: {}'.format(e))
             # reconnect to the server
             host = '127.0.0.1'
             # host = ' http://freezer-engine.herokuapp.com'
@@ -122,7 +127,6 @@ def event_handle(event):
 
         if res['type'] == "text":
             replyObj = TextSendMessage(text=res['message'])
-            # print("Bot:",res['message'])
             line_bot_api.reply_message(rtoken, replyObj)
         elif res['type'] == "quick_reply":
             items = [QuickReplyButton(action=MessageAction(label=t, text=t)) for t in res['aux_data']]
@@ -140,8 +144,8 @@ def event_handle(event):
 
         message_content = line_bot_api.get_message_content(message_id)
 
-        # print(type(message_content))
-        # print(message_content)
+        # logging.info(type(message_content))
+        # logging.info(message_content)
 
         res = c.req('save image')
         if res['type'] == 'image':
@@ -152,7 +156,6 @@ def event_handle(event):
                     fd.write(chunk)
 
             replyObj = TextSendMessage(text=res['message'])
-            # print("Bot:",res['message'])
             line_bot_api.reply_message(rtoken, replyObj)
         elif res['type'] == "quick_reply":
             items = [QuickReplyButton(action=MessageAction(label=t, text=t)) for t in res['aux_data']]
@@ -171,7 +174,7 @@ def event_handle(event):
 def expire_reminder():
     global c
 
-    print("Bot: I'm checking expiring items")
+    logging.info("[Flask server] Checking expiring items...")
 
     # socket request
     res_msg = c.req('check')
