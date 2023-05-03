@@ -5,25 +5,21 @@
 # ref: https://medium.com/linedevth/%E0%B8%AA%E0%B8%A3%E0%B9%89%E0%B8%B2%E0%B8%87-line-chatbot-%E0%B8%94%E0%B9%89%E0%B8%A7%E0%B8%A2%E0%B8%A0%E0%B8%B2%E0%B8%A9%E0%B8%B2-python-84750b353fba
 # ref of socket communication: https://github.com/robocup-eic/robocup2022-cv-yolov5/blob/main/yolov5.py
 ################################
-from urllib.parse import uses_relative
-from flask import Flask, jsonify, render_template, request
-import json
+
+from flask import Flask, request, abort
 import numpy as np
-import pandas as pd
 
 from linebot.models import *
 from linebot.models.template import *
 from linebot import (
     LineBotApi, WebhookHandler
 )
+from linebot.exceptions import (
+    InvalidSignatureError
+)
 
 import os
 from dotenv import load_dotenv
-
-from conversation import Conversation
-
-# multiprocess for parallel processing
-from multiprocessing import Process
 
 # custom socket for client connections
 from custom_socket import CustomSocket
@@ -35,13 +31,13 @@ import logging
 
 logging.basicConfig(filename='app.log', encoding='utf-8', level=logging.DEBUG)
 
-
-app = Flask(__name__)
-
 load_dotenv()
 
 lineaccesstoken = os.getenv('LINE_ACCESS_TOKEN')
+channelsecret = os.getenv('CHANNEL_SECRET')
+
 line_bot_api = LineBotApi(lineaccesstoken)
+handler = WebhookHandler(channelsecret)
 
 # host = socket.gethostname()
 host = '127.0.0.1'
@@ -55,6 +51,8 @@ while not connected:
     connected = c.clientConnect()
     time.sleep(1)
 
+# start flask server
+app = Flask(__name__)
 
 @app.route('/')
 def index():
@@ -63,43 +61,33 @@ def index():
 
 @app.route('/webhook', methods=['POST'])
 def callback():
-    json_line = request.get_json(force=False,cache=False)
-    json_line = json.dumps(json_line)
-    decoded = json.loads(json_line)
-    no_event = len(decoded['events'])
-    for i in range(no_event):
-        event = decoded['events'][i]
-        event_handle(event)
-    return '',200
+    # get X-Line-Signature header value
+    signature = request.headers['X-Line-Signature']
 
+    # get request body as text
+    body = request.get_data(as_text=True)
+    app.logger.info("Request body: " + body)
 
-def event_handle(event):
+    # handle webhook body
+    try:
+        logging.info('[Flask server] Received webhook')
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        print("Invalid signature. Please check your channel access token/channel secret.")
+        abort(400)
+
+    return 'OK'
+
+@handler.add(MessageEvent, message=TextMessage)
+def handle_message(event):
+
     global c
-    logging.info('[Flask server] Webhook received event: {}'.format(event))
 
-    try:
-        userId = event['source']['userId']
-    except:
-        logging.error('error cannot get userId')
-        return ''
-
-    try:
-        rtoken = event['replyToken']
-    except:
-        logging.error('error cannot get rtoken')
-        return ''
-    try:
-        msgId = event["message"]["id"]
-        msgType = event["message"]["type"]
-    except:
-        logging.error('error cannot get msgID, and msgType')
-        sk_id = np.random.randint(1,17)
-        replyObj = StickerSendMessage(package_id=str(1),sticker_id=str(sk_id))
-        line_bot_api.reply_message(rtoken, replyObj)
-        return ''
+    rtoken = event.reply_token
+    msgType = event.message.type
 
     if msgType == "text":
-        msg = str(event["message"]["text"])
+        msg = str(event.message.text)
 
         # socket request
         try:
@@ -140,12 +128,9 @@ def event_handle(event):
                 quick_reply=QuickReply(items=[camera_item, text_item]))
             line_bot_api.reply_message(rtoken, replyObj)
     elif msgType == 'image':
-        message_id = str(event["message"]["id"])
+        message_id = str(event.message.id)
 
         message_content = line_bot_api.get_message_content(message_id)
-
-        # logging.info(type(message_content))
-        # logging.info(message_content)
 
         res = c.req('save image')
         if res['type'] == 'image':
@@ -163,12 +148,11 @@ def event_handle(event):
                 quick_reply=QuickReply(items=items))
             line_bot_api.reply_message(rtoken, replyObj)
 
-
     else:
         sk_id = np.random.randint(1,17)
         replyObj = StickerSendMessage(package_id=str(1),sticker_id=str(sk_id))
         line_bot_api.reply_message(rtoken, replyObj)
-    return ''
+
 
 @app.route('/reminder', methods=['GET'])
 def expire_reminder():
@@ -188,8 +172,3 @@ def expire_reminder():
 if __name__ == '__main__':
 
     app.run(debug=True, port = 80, use_reloader=False)
-
-    # p = Process(target=expire_reminder)
-    # p.start()  
-    # app.run(debug=True, port = 80, use_reloader=False)
-    # p.join()
