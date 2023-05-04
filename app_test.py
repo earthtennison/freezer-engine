@@ -17,6 +17,10 @@ from linebot.models import (
 import os
 from dotenv import load_dotenv
 
+import logging
+
+logging.basicConfig(filename='app.log', encoding='utf-8', level=logging.DEBUG, format='%(asctime)-15s:%(levelname)s:%(name)s:%(message)s')
+
 load_dotenv()
 
 lineaccesstoken = os.getenv('LINE_ACCESS_TOKEN')
@@ -30,20 +34,24 @@ handler = WebhookHandler(channelsecret)
 
 @app.route("/webhook", methods=['POST'])
 def callback():
-    # get X-Line-Signature header value
-    signature = request.headers['X-Line-Signature']
+    try:
+        logging.info('Received webhook')
+        # get X-Line-Signature header value
+        signature = request.headers['X-Line-Signature']
 
-    # get request body as text
-    body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
+        # get request body as text
+        body = request.get_data(as_text=True)
+        logging.info("Request body: " + body)
 
+    except Exception as e:
+        logging.error('Error'+e)
+        abort(400)
     # handle webhook body
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
-        print("Invalid signature. Please check your channel access token/channel secret.")
+        logging.error("Invalid signature. Please check your channel access token/channel secret.")
         abort(400)
-
     return 'OK'
 
 
