@@ -34,7 +34,7 @@ class Conversation():
 
 		self.conver_index = 0
 
-		self.item = {'name':'', 'expiry_date':None, 'store_place':'', 'quantity':0, 'category':'', 'exist':True, 'image_id':'', 'add_date': None}
+		self.item = {'item_id':'','name':'', 'expiry_date':None, 'store_place':'', 'quantity':0, 'category':'', 'exist':True, 'image_id':'', 'add_date': None}
 
 		self.db = csv_database(db_path)
 
@@ -114,6 +114,7 @@ class Conversation():
 				return {'type': "text", 'message': "What's the name of item?", 'aux_data':''}
 			elif self.conver_index == 1:
 				self.item['name'] = self.current_msg.lower()
+				self.item['item_id'] = self.db.gen_id()
 				self.conver_index += 1
 				return {'type': "text", 'message': "What's the date of expiration?", 'aux_data':''}
 			elif self.conver_index == 2:
@@ -179,14 +180,22 @@ class Conversation():
 			elif self.conver_index == 1:
 
 				# check if is answer from quick reply
-				if '_' in self.current_msg.lower():
-					self.item['name'] = self.current_msg.lower().split('_')[0]
-					self.item['store_place'] = self.current_msg.lower().split('_')[1]
+				# 'at' is keyword for quick reply from select item location
+				if 'at' in self.current_msg.lower():
+					
+					self.item['item_id'] = self.current_msg.lower().split('_')[-1]
+
+
+				# 'buy on' is keyword for quick reply from select buy date
+				elif 'buy_on' in self.current_msg.lower():
+
+					self.item['item_id'] = self.current_msg.lower().split('_')[-1]
+				# else update item name
 				else:
 
 					self.item['name'] = self.current_msg.lower()
 					# check if item is in database
-					if self.item['name'] not in self.db.df['name'].to_list():
+					if len(self.db.get_id(name=self.item['name'], exist=True)) == 0:
 						logging.info("Bot: Item is not in the list")
 
 						self.conver_index = 0
@@ -195,24 +204,26 @@ class Conversation():
 						return {'type': "text", 'message': 'Item is not in the list', 'aux_data':''}
 					else:
 						# check if items are in many locations
-						logging.info(self.db.df.loc[(self.db.df['name'] == self.item['name']) & self.db.df['exist'], 'store_place'])
-						if len(self.db.df.loc[(self.db.df['name'] == self.item['name']) & self.db.df['exist'], 'store_place']) > 1:
-							store_places = self.db.df.loc[(self.db.df['name'] == self.item['name']) & self.db.df['exist'], 'store_place'].to_list()
-							return {'type':'quick_reply', 'message':'Please select item location', 'aux_data':[self.item['name']+'_'+p for p in store_places]}
+						place_list = self.db.df.loc[(self.db.df['name'] == self.item['name']) & (self.db.df['exist']==True),['store_place', 'add_date','item_id']].values.tolist()
+
+						if len(set([p[0] for p in place_list])) > 1:
+							return {'type':'quick_reply', 'message':'Please select item location', 'aux_data':[ '{}_at_{}_{}'.format(self.item['name'], p[0], p[2]) for p in place_list]}
 					
 						else:
-							# there is one item
-							self.item['store_place'] = self.db.df.loc[self.db.df['name'] == self.item['name'],'store_place'].to_list()[0]
+							# there is one item or items are in one place
+							if len(place_list) == 1:
+								self.item['item_id'] = place_list[0][2]
+							else:
+								return {'type':'quick_reply', 'message':'Please select item buy date', 'aux_data':['{}_at_{}_buy_on_{}_{}'.format(self.item['name'], p[0], p[1], p[2]) for p in place_list]}
+				
 				self.conver_index += 1
 				return {'type': "text", 'message': "What's the new quantity?", 'aux_data':''}
 			elif self.conver_index == 2:
 				self.item['quantity'] = int(self.current_msg)
 				if self.item['quantity'] == 0:
 					# delete item
-					# self.db.df = self.db.df.loc[self.db.df['name'] != self.item['name']]
-					index = self.db.df.loc[(self.db.df['name'] == self.item['name']) & (self.db.df['store_place'] == self.item['store_place'])& self.item['exist']==True].index[0]
-					self.db.df.loc[index, 'exist'] = False
-					# self.db.df.loc[self.db.df['name'] == self.item['name'],'exist'] = False
+					self.db.df.loc[self.db.df['item_id'] == self.item['item_id'], 'quantity'] = self.item['quantity']
+					self.db.df.loc[self.db.df['item_id'] == self.item['item_id'], 'exist'] = False
 					self.db.save_csv()
 
 					self.conver_index = 0
@@ -221,8 +232,8 @@ class Conversation():
 					return {'type': "text", 'message': "I deleted {}".format(self.item['name']), 'aux_data':''}
 				else:
 					# update item
-					index = self.db.df.loc[(self.db.df['name'] == self.item['name']) & (self.db.df['store_place'] == self.item['store_place'])& (self.item['exist']==True)].index[0]
-					self.db.df.loc[index, 'quantity'] = self.item['quantity']
+					
+					self.db.df.loc[self.db.df['item_id'] == self.item['item_id'], 'quantity'] = self.item['quantity']
 					
 					
 					self.db.save_csv()
@@ -254,7 +265,7 @@ class Conversation():
 
 def main() :
 
-	con = Conversation("./database/data1.csv")
+	con = Conversation("./database/data2.csv")
 
 	server = CustomSocket('127.0.0.1', 10000, 'Socket server') #host =socket.gethostname()
 	logging.info("[Socket server] Starting...")
@@ -288,7 +299,7 @@ def main() :
 
 
 def manual_input_main():
-	con = Conversation("./database/data1.csv")
+	con = Conversation("./database/data2.csv")
 
 	while True:
 		# Get user input
@@ -298,5 +309,6 @@ def manual_input_main():
 
 
 if __name__ == '__main__':
-	main()
+	# main()
+	manual_input_main()
 
