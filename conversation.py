@@ -309,6 +309,6 @@ def manual_input_main():
 
 
 if __name__ == '__main__':
-	# main()
-	manual_input_main()
+	main()
+	# manual_input_main()
 
