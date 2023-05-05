@@ -127,7 +127,17 @@ def handle_message(event):
             replyObj = TextSendMessage(text=res['message'],
                 quick_reply=QuickReply(items=[camera_item, text_item]))
             line_bot_api.reply_message(rtoken, replyObj)
-    elif msgType == 'image':
+
+
+@handler.default()
+def default(event):
+
+    global c
+
+    rtoken = event.reply_token
+    msgType = event.message.type
+
+    if msgType == 'image':
         message_id = str(event.message.id)
 
         message_content = line_bot_api.get_message_content(message_id)
@@ -149,6 +159,7 @@ def handle_message(event):
             line_bot_api.reply_message(rtoken, replyObj)
 
     else:
+        # sticker or other stuff
         sk_id = np.random.randint(1,17)
         replyObj = StickerSendMessage(package_id=str(1),sticker_id=str(sk_id))
         line_bot_api.reply_message(rtoken, replyObj)
